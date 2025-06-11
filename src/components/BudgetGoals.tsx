@@ -38,11 +38,11 @@ export default function BudgetGoals() {
   }
 
   return (
-    <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
-      <h2 className="text-xl font-semibold text-gray-900 mb-6">Financial Goals</h2>
+    <div className="bg-white p-2 sm:p-4 md:p-6 rounded-xl shadow-sm border border-gray-100">
+      <h2 className="text-xl font-semibold text-gray-900 mb-4 sm:mb-6">Financial Goals</h2>
 
-      <form onSubmit={handleAddGoal} className="mb-8">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <form onSubmit={handleAddGoal} className="mb-6 sm:mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-2 sm:gap-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
               Goal Name
@@ -52,7 +52,7 @@ export default function BudgetGoals() {
               value={newGoal.name}
               onChange={(e) => setNewGoal({ ...newGoal, name: e.target.value })}
               placeholder="e.g., Emergency Fund"
-              className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900"
+              className="w-full px-3 sm:px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900"
               required
             />
           </div>
@@ -67,7 +67,7 @@ export default function BudgetGoals() {
               placeholder="0.00"
               min="0"
               step="0.01"
-              className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900"
+              className="w-full px-3 sm:px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900"
               required
             />
           </div>
@@ -82,7 +82,7 @@ export default function BudgetGoals() {
               placeholder="0.00"
               min="0"
               step="0.01"
-              className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900"
+              className="w-full px-3 sm:px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900"
             />
           </div>
         </div>
@@ -98,7 +98,7 @@ export default function BudgetGoals() {
         </div>
       </form>
 
-      <div className="space-y-4">
+      <div className="space-y-2 sm:space-y-4">
         <AnimatePresence>
           {goals.map((goal) => (
             <motion.div
@@ -106,9 +106,9 @@ export default function BudgetGoals() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -20 }}
-              className="bg-gray-50 p-4 rounded-lg"
+              className="bg-gray-50 p-3 sm:p-4 rounded-lg"
             >
-              <div className="flex items-center justify-between mb-2">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-0 mb-2">
                 <h3 className="font-medium text-gray-900">{goal.name}</h3>
                 <motion.button
                   whileHover={{ scale: 1.1 }}
@@ -119,8 +119,8 @@ export default function BudgetGoals() {
                   Delete
                 </motion.button>
               </div>
-              <div className="flex items-center gap-4 mb-2">
-                <div className="flex-1">
+              <div className="flex flex-col sm:flex-row items-center gap-2 mb-2">
+                <div className="flex-1 w-full">
                   <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
                     <div
                       className="h-full bg-blue-500 rounded-full transition-all duration-300"
@@ -133,11 +133,11 @@ export default function BudgetGoals() {
                     />
                   </div>
                 </div>
-                <div className="text-sm text-gray-600">
+                <div className="text-sm text-gray-600 min-w-[40px] text-right">
                   {Math.round((goal.currentAmount / goal.targetAmount) * 100)}%
                 </div>
               </div>
-              <div className="flex justify-between text-sm text-gray-600">
+              <div className="flex flex-col sm:flex-row justify-between text-sm text-gray-600 gap-1 sm:gap-0">
                 <span>${goal.currentAmount.toFixed(2)}</span>
                 <span>${goal.targetAmount.toFixed(2)}</span>
               </div>
@@ -145,9 +145,7 @@ export default function BudgetGoals() {
                 <input
                   type="number"
                   value={goal.currentAmount}
-                  onChange={(e) =>
-                    handleUpdateGoal(goal.id, parseFloat(e.target.value))
-                  }
+                  onChange={(e) => handleUpdateGoal(goal.id, parseFloat(e.target.value))}
                   min="0"
                   step="0.01"
                   className="w-full px-3 py-1 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900"

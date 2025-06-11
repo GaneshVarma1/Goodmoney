@@ -26,6 +26,11 @@ export default function BudgetInsights() {
       .filter((t) => t.type === 'expense')
       .reduce((sum, t) => sum + t.amount, 0)
 
+    // If there are no transactions, return an empty array (no insights)
+    if (totalIncome === 0 && totalExpenses === 0) {
+      return [];
+    }
+
     // Calculate savings rate
     const savingsRate = totalIncome > 0 ? ((totalIncome - totalExpenses) / totalIncome) * 100 : 0
 

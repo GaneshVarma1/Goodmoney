@@ -45,11 +45,11 @@ export default function BudgetCategories() {
   }
 
   return (
-    <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
-      <h2 className="text-xl font-semibold text-gray-900 mb-6">Budget Categories</h2>
+    <div className="bg-white p-2 sm:p-4 md:p-6 rounded-xl shadow-sm border border-gray-100">
+      <h2 className="text-xl font-semibold text-gray-900 mb-4 sm:mb-6">Budget Categories</h2>
 
-      <form onSubmit={handleAddCategory} className="mb-8">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <form onSubmit={handleAddCategory} className="mb-6 sm:mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-2 sm:gap-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
               Category Name
@@ -59,7 +59,7 @@ export default function BudgetCategories() {
               value={newCategory.name}
               onChange={(e) => setNewCategory({ ...newCategory, name: e.target.value })}
               placeholder="e.g., Groceries"
-              className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900"
+              className="w-full px-3 sm:px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900"
               required
             />
           </div>
@@ -74,7 +74,7 @@ export default function BudgetCategories() {
               placeholder="0.00"
               min="0"
               step="0.01"
-              className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900"
+              className="w-full px-3 sm:px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900"
               required
             />
           </div>
@@ -91,15 +91,15 @@ export default function BudgetCategories() {
         </div>
       </form>
 
-      <div className="space-y-4">
+      <div className="space-y-2 sm:space-y-4">
         {categories.map((category: BudgetCategory) => (
           <motion.div
             key={category.id}
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            className="p-4 bg-gray-50 rounded-lg"
+            className="p-3 sm:p-4 bg-gray-50 rounded-lg"
           >
-            <div className="flex justify-between items-center">
+            <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-1 sm:gap-0">
               <div>
                 <h3 className="font-medium text-gray-900">{category.name}</h3>
                 <p className="text-sm text-gray-500">
