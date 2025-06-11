@@ -127,7 +127,7 @@ export default function BudgetReports() {
   // Don't render export button until client-side
   if (!isClient) {
     return (
-      <div className="flex flex-col gap-6 bg-white p-6">
+      <div className="flex flex-col gap-6 bg-white p-4 sm:p-6 w-full">
         <div className="animate-pulse">
           <div className="h-8 bg-gray-200 rounded w-32 mb-4"></div>
           <div className="space-y-3">
@@ -140,7 +140,7 @@ export default function BudgetReports() {
   }
 
   return (
-    <div className="relative">
+    <div className="relative min-h-screen w-full overflow-x-hidden">
       {/* Loading overlay - outside the content to be captured */}
       {isExporting && (
         <div 
@@ -157,7 +157,7 @@ export default function BudgetReports() {
       {/* Main content to be captured */}
       <div 
         ref={contentRef}
-        className="flex flex-col gap-6 bg-white p-6"
+        className="flex flex-col gap-4 sm:gap-6 bg-white p-2 sm:p-4 md:p-6 w-full"
         style={{ 
           minHeight: '100vh',
           backgroundColor: '#ffffff',
@@ -165,8 +165,8 @@ export default function BudgetReports() {
         }}
       >
         {/* Date Range Picker & Export */}
-        <div className="flex flex-col sm:flex-row sm:items-center gap-4 justify-between">
-          <div className="flex gap-2 flex-wrap">
+        <div className="flex flex-col md:flex-row md:items-center gap-2 md:gap-4 justify-between w-full">
+          <div className="flex flex-wrap gap-2">
             {dateRanges.map(r => (
               <button
                 key={r.value}
@@ -190,27 +190,27 @@ export default function BudgetReports() {
               </>
             )}
           </div>
-          <div className="flex gap-2 items-center">
+          <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
             <button 
               onClick={handleExportPDF}
               disabled={isExporting}
-              className={`px-4 py-2 rounded-lg bg-blue-600 text-white font-medium shadow hover:bg-blue-700 transition
+              className={`px-4 py-2 rounded-lg bg-blue-600 text-white font-medium shadow hover:bg-blue-700 transition w-full sm:w-auto
                 ${isExporting ? 'opacity-50 cursor-not-allowed' : ''}`}
             >
               {isExporting ? 'Exporting...' : 'Export PDF'}
             </button>
             <input
               type="email"
-              className="border rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400 text-gray-900 placeholder-gray-500 bg-white"
+              className="border rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400 text-gray-900 placeholder-gray-500 bg-white w-full sm:w-auto"
               placeholder="Your email"
               value={email}
               onChange={e => setEmail(e.target.value)}
               required
-              style={{ minWidth: 200 }}
+              style={{ minWidth: 0 }}
             />
             <button
               onClick={handleEmailStatement}
-              className="px-4 py-2 rounded-lg bg-green-600 text-white font-medium shadow hover:bg-green-700 transition disabled:opacity-60"
+              className="px-4 py-2 rounded-lg bg-green-600 text-white font-medium shadow hover:bg-green-700 transition disabled:opacity-60 w-full sm:w-auto"
               disabled={!email || emailStatus === 'sending'}
             >
               {emailStatus === 'sending' ? 'Sending...' : 'Email me Statement'}
@@ -221,7 +221,7 @@ export default function BudgetReports() {
         {emailStatus === 'error' && <div className="text-red-600 font-medium">Failed to send statement. Please try again.</div>}
 
         {/* Summary Cards */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2 sm:gap-4 w-full">
           <div className="bg-white rounded-xl shadow border p-4 flex flex-col items-center">
             <span className="text-gray-500 text-sm">Total Income</span>
             <span className="text-2xl font-bold text-green-600">${totalIncome.toLocaleString()}</span>
@@ -237,10 +237,10 @@ export default function BudgetReports() {
         </div>
 
         {/* Charts */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <div className="bg-white rounded-xl shadow border p-4 flex flex-col">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 w-full">
+          <div className="bg-white rounded-xl shadow border p-2 sm:p-4 flex flex-col w-full min-h-[200px] h-[40vw] max-h-[400px]">
             <h2 className="text-lg font-semibold mb-2 text-gray-900">Income vs Expenses</h2>
-            <div className="h-64 w-full">
+            <div className="flex-1 min-h-[150px]">
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={monthlyData} margin={{ top: 16, right: 16, left: 0, bottom: 0 }}>
                   <XAxis dataKey="month" stroke="#888" fontSize={12} />
@@ -253,9 +253,9 @@ export default function BudgetReports() {
               </ResponsiveContainer>
             </div>
           </div>
-          <div className="bg-white rounded-xl shadow border p-4 flex flex-col">
+          <div className="bg-white rounded-xl shadow border p-2 sm:p-4 flex flex-col w-full min-h-[200px] h-[40vw] max-h-[400px]">
             <h2 className="text-lg font-semibold mb-2 text-gray-900">Expenses by Category</h2>
-            <div className="h-64 w-full">
+            <div className="flex-1 min-h-[150px]">
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
                   <Pie
@@ -280,7 +280,7 @@ export default function BudgetReports() {
         </div>
 
         {/* Detailed Table */}
-        <div className="bg-white rounded-xl shadow border p-4 overflow-x-auto">
+        <div className="overflow-x-auto w-full">
           <h2 className="text-lg font-semibold mb-2 text-gray-900">Transactions</h2>
           <table className="min-w-full text-sm">
             <thead>

@@ -1,8 +1,8 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { motion } from 'framer-motion'
-import { MdHome, MdAttachMoney, MdTrackChanges, MdFolder, MdBarChart, MdDescription } from 'react-icons/md'
+import { MdHome, MdAttachMoney, MdTrackChanges, MdFolder, MdBarChart, MdDescription, MdMenu, MdClose } from 'react-icons/md'
 import TransactionForm from './TransactionForm'
 import TransactionList from './TransactionList'
 import BudgetCategories from './BudgetCategories'
@@ -16,6 +16,8 @@ type Tab = 'overview' | 'transactions' | 'goals' | 'categories' | 'insights' | '
 
 export default function Dashboard() {
   const [activeTab, setActiveTab] = useState<Tab>('overview')
+  const [sidebarOpen, setSidebarOpen] = useState(false)
+  const sidebarRef = useRef<HTMLDivElement>(null)
   const { user } = useUser();
 
   const tabs: { id: Tab; label: string; icon: React.ReactNode }[] = [
@@ -36,63 +38,97 @@ export default function Dashboard() {
     reports: 'Generate and export detailed financial reports',
   }
 
+  // Close sidebar when clicking outside (on mobile)
+  useEffect(() => {
+    if (!sidebarOpen) return;
+    function handleClick(e: MouseEvent) {
+      if (sidebarRef.current && !sidebarRef.current.contains(e.target as Node)) {
+        setSidebarOpen(false);
+      }
+    }
+    document.addEventListener('mousedown', handleClick);
+    return () => document.removeEventListener('mousedown', handleClick);
+  }, [sidebarOpen]);
+
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 flex flex-col">
       {/* Header */}
-      <header className="bg-white border-b border-gray-200">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center py-4">
-            <h1 className="text-2xl font-bold text-gray-900">Budget Tracker</h1>
-            <SignedIn>
-              <div className="flex items-center gap-4">
-                <span className="text-sm text-gray-600">
-                  Welcome, {user?.firstName || 'User'}
-                </span>
-                <UserButton afterSignOutUrl="/" />
-              </div>
-            </SignedIn>
+      <header className="bg-white border-b border-gray-200 shadow-sm sticky top-0 z-20">
+        <div className="flex items-center justify-between px-2 sm:px-4 lg:px-8 py-4">
+          <div className="flex items-center gap-4">
+            <button
+              className="p-2 rounded-lg hover:bg-gray-100 focus:outline-none"
+              onClick={() => setSidebarOpen((open) => !open)}
+              aria-label={sidebarOpen ? 'Close sidebar' : 'Open sidebar'}
+            >
+              {sidebarOpen ? <MdClose className="w-6 h-6" /> : <MdMenu className="w-6 h-6" />}
+            </button>
+            <h1 className="text-2xl font-bold text-gray-900">Good Money</h1>
           </div>
+          <SignedIn>
+            <div className="flex items-center gap-4">
+              <span className="text-sm text-gray-600">
+                Welcome, {user?.firstName || 'User'}
+              </span>
+              <UserButton afterSignOutUrl="/" />
+            </div>
+          </SignedIn>
         </div>
       </header>
 
-      {/* Main Content */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="flex flex-col md:flex-row gap-8">
-          {/* Sidebar */}
-          <div className="w-full md:w-64 flex-shrink-0">
-            <nav className="space-y-1">
-              {tabs.map((tab) => (
-                <motion.button
-                  key={tab.id}
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
-                  onClick={() => setActiveTab(tab.id)}
-                  className={`w-full flex items-center gap-3 px-4 py-3 text-sm font-medium rounded-lg transition-colors ${
-                    activeTab === tab.id
-                      ? 'bg-blue-50 text-blue-700'
-                      : 'text-gray-600 hover:bg-gray-50'
-                  }`}
-                >
-                  {tab.icon}
-                  {tab.label}
-                </motion.button>
-              ))}
-            </nav>
+      {/* Sidebar Drawer (Floating, No Backdrop) */}
+      {sidebarOpen && (
+        <aside
+          ref={sidebarRef}
+          className="fixed top-0 left-0 z-50 h-full bg-white border-r border-gray-200 shadow-lg transition-all duration-300 ease-in-out w-[90vw] md:w-[300px] overflow-x-hidden flex flex-col"
+          style={{ maxWidth: '100vw' }}
+        >
+          <div className="flex items-center justify-between p-4 border-b border-gray-100">
+            <h2 className="text-lg font-semibold text-gray-900">Menu</h2>
+            <button
+              className="p-2 rounded-lg hover:bg-gray-100 focus:outline-none"
+              onClick={() => setSidebarOpen(false)}
+              aria-label="Close sidebar"
+            >
+              <MdClose className="w-6 h-6" />
+            </button>
           </div>
+          <nav className="space-y-1 p-4">
+            {tabs.map((tab) => (
+              <motion.button
+                key={tab.id}
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+                onClick={() => { setActiveTab(tab.id); setSidebarOpen(false); }}
+                className={`w-full flex items-center gap-3 px-4 py-3 text-sm font-medium rounded-lg transition-colors ${
+                  activeTab === tab.id
+                    ? 'bg-blue-50 text-blue-700'
+                    : 'text-gray-600 hover:bg-gray-50'
+                }`}
+              >
+                {tab.icon}
+                {tab.label}
+              </motion.button>
+            ))}
+          </nav>
+        </aside>
+      )}
 
-          {/* Content Area */}
-          <div className="flex-1">
-            <div className="mb-6">
-              <h2 className="text-xl font-semibold text-gray-900">
-                {tabs.find((t) => t.id === activeTab)?.label}
-              </h2>
-              <p className="text-sm text-gray-600">
-                {tabDescriptions[activeTab]}
-              </p>
-            </div>
-
-            {/* Tab Content */}
-            <div className="space-y-6">
+      {/* Main Content Area */}
+      <main className="flex-1 transition-all duration-300 ease-in-out">
+        <div className="px-2 sm:px-4 lg:px-8 py-8">
+          <div className="mb-6">
+            <h2 className="text-xl font-semibold text-gray-900">
+              {tabs.find((t) => t.id === activeTab)?.label}
+            </h2>
+            <p className="text-sm text-gray-600">
+              {tabDescriptions[activeTab]}
+            </p>
+          </div>
+          {activeTab === 'reports' ? (
+            <BudgetReports />
+          ) : (
+            <div className="space-y-6 bg-white rounded-xl shadow-sm border border-gray-100 p-6">
               {activeTab === 'overview' && <FinancialOverview />}
               {activeTab === 'transactions' && (
                 <>
@@ -103,11 +139,13 @@ export default function Dashboard() {
               {activeTab === 'goals' && <SavingsGoals />}
               {activeTab === 'categories' && <BudgetCategories />}
               {activeTab === 'insights' && <BudgetInsights />}
-              {activeTab === 'reports' && <BudgetReports />}
             </div>
-          </div>
+          )}
         </div>
       </main>
+      <footer className="mt-8 text-center text-gray-500 text-sm">
+        Built to save your money by <a href="https://bit.ly/sriport" target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">this guy</a>
+      </footer>
     </div>
   )
 } 
