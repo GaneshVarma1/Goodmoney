@@ -24,7 +24,7 @@ export default function BudgetGoals() {
       currentAmount: 0,
     })
     toast.success('Goal added!')
-    setNewGoal({ name: '', targetAmount: '' })
+    setNewGoal({ name: '', targetAmount: '', currentAmount: '' })
   }
 
   const handleUpdateGoal = (id: string, currentAmount: number) => {
