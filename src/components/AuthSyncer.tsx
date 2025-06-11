@@ -10,7 +10,6 @@ export default function AuthSyncer({ children }: { children: React.ReactNode }) 
     const setAuthHeader = async () => {
       if (isSignedIn) {
         const token = await getToken({ template: 'supabase' });
-        console.log('Clerk JWT from getToken:', token);
         if (token) {
           await supabase.auth.setSession({ access_token: token, refresh_token: '' });
           console.log('Supabase session set with Clerk JWT');
