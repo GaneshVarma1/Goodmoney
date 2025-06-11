@@ -24,3 +24,22 @@ body {
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
 }
+
+/* Add these styles */
+.pdf-exporting {
+  pointer-events: none;
+  user-select: none;
+}
+
+.pdf-exporting * {
+  pointer-events: none;
+  user-select: none;
+}
+
+/* Ensure proper rendering during export */
+@media print {
+  * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+}
