@@ -14,7 +14,7 @@ const righteous = Righteous({
 
 export const metadata: Metadata = {
   title: "Good Money - Save your money",
-  description: "Track your finances and achieve your financial goals",
+  description: "Track your finances and achieve your financial goals with AI",
 };
 
 export default function RootLayout({
