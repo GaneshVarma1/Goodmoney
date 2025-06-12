@@ -9,11 +9,8 @@ if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_A
   console.error('Missing Supabase env variables');
 }
 
-// Initialize Supabase client
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL || '',
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || ''
-);
+// Supabase client will be initialized lazily after env-var validation
+let supabase: ReturnType<typeof createClient>;
 
 // Retry configuration
 const MAX_RETRIES = 3;
@@ -199,13 +196,19 @@ async function saveMessage(userId: string, role: 'user' | 'assistant', content: 
 }
 
 export async function POST(req: Request) {
-  // Guard against mis-configuration without exposing variable names to the client
-  if (!process.env.TOGETHER_API_KEY || !process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
+  // Guard against mis-configuration (do this once at the top of the handler)
+  const { TOGETHER_API_KEY, NEXT_PUBLIC_SUPABASE_URL, NEXT_PUBLIC_SUPABASE_ANON_KEY } = process.env;
+  if (!TOGETHER_API_KEY || !NEXT_PUBLIC_SUPABASE_URL || !NEXT_PUBLIC_SUPABASE_ANON_KEY) {
     console.error('Configuration error: missing env vars');
     return NextResponse.json(
       { error: 'Server configuration error' },
       { status: 500 }
     );
+  }
+
+  // Initialize Supabase client only after validation
+  if (!supabase) {
+    supabase = createClient(NEXT_PUBLIC_SUPABASE_URL, NEXT_PUBLIC_SUPABASE_ANON_KEY);
   }
 
   try {
@@ -312,7 +315,8 @@ export async function POST(req: Request) {
       `;
     }
 
-    console.log('Sending request to Together AI with prompt:', prompt);
+    // Log intent without leaking keys or full prompt
+    console.log('Calling Together AI with prompt length:', prompt.length);
 
     const result = await makeApiRequest(prompt);
     
