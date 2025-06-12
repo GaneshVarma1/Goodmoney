@@ -12,10 +12,6 @@ if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_A
 // Supabase client will be initialized lazily after env-var validation
 let supabase: ReturnType<typeof createClient>;
 
-// Retry configuration
-const MAX_RETRIES = 3;
-const RETRY_DELAY = 1000; // 1 second
-
 interface TogetherAIResponse {
   choices: Array<{
     message: {
@@ -48,71 +44,102 @@ interface Transaction {
   created_at: string;
 }
 
-async function delay(ms: number) {
-  return new Promise(resolve => setTimeout(resolve, ms));
-}
+async function makeApiRequest(prompt: string, context?: string): Promise<TogetherAIResponse> {
+  const maxRetries = 3;
+  const baseDelay = 1000;
 
-async function makeApiRequest(prompt: string, retryCount = 0): Promise<TogetherAIResponse> {
-  try {
-    const response = await fetch("https://api.together.xyz/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        "Authorization": `Bearer ${process.env.TOGETHER_API_KEY}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        model: "lgai/exaone-deep-32b",
-        messages: [
-          {
-            role: "system",
-            content: "You are a helpful financial assistant."
-          },
-          {
-            role: "user",
-            content: prompt
-          }
-        ],
-        temperature: 0.7,
-        max_tokens: 1000,
-        top_p: 0.95,
-      }),
-    });
-
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => null);
-      console.error('Together AI API error details:', {
-        status: response.status,
-        statusText: response.statusText,
-        errorData,
-        retryCount
+  for (let attempt = 0; attempt < maxRetries; attempt++) {
+    try {
+      const response = await fetch('https://api.together.xyz/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${process.env.TOGETHER_API_KEY}`
+        },
+        body: JSON.stringify({
+          model: 'meta-llama/Llama-3.3-70B-Instruct-Turbo-Free',
+          messages: [
+            {
+              role: 'system',
+              content: 'You are a helpful financial assistant. Provide clear, concise, and accurate financial advice. Focus on budgeting, saving, and making informed financial decisions.'
+            },
+            ...(context ? [{ role: 'user', content: context }] : []),
+            { role: 'user', content: prompt }
+          ],
+          temperature: 0.7,
+          max_tokens: 1000,
+          top_p: 0.9,
+          frequency_penalty: 0.1,
+          presence_penalty: 0.1
+        })
       });
-      
-      if (retryCount < MAX_RETRIES && 
-          (response.status === 429 || response.status === 503 || response.status === 500)) {
-        console.log(`Retrying request (${retryCount + 1}/${MAX_RETRIES})...`);
-        await delay(RETRY_DELAY * Math.pow(2, retryCount));
-        return makeApiRequest(prompt, retryCount + 1);
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        console.error('Together AI API error details:', {
+          status: response.status,
+          statusText: response.statusText,
+          errorData,
+          retryCount: attempt
+        });
+
+        // Only retry on specific error statuses
+        if (response.status === 429 || response.status === 503 || response.status === 500) {
+          if (attempt < maxRetries - 1) {
+            const delay = baseDelay * Math.pow(2, attempt);
+            console.log(`Retrying request (${attempt + 1}/${maxRetries})...`);
+            await new Promise(resolve => setTimeout(resolve, delay));
+            continue;
+          }
+        }
+
+        // Return a fallback response instead of throwing an error
+        return {
+          choices: [{
+            message: {
+              content: "I apologize, but I'm currently experiencing technical difficulties. Please try again in a few moments. In the meantime, you can:\n\n1. Check your transaction history\n2. Review your budget categories\n3. Track your savings goals"
+            }
+          }],
+          usage: {
+            prompt_tokens: 0,
+            completion_tokens: 0,
+            total_tokens: 0
+          }
+        };
       }
 
-      if (response.status === 401) {
-        throw new Error('Invalid API key. Please check your Together AI API key.');
-      } else if (response.status === 429) {
-        throw new Error('Rate limit exceeded. Please try again later.');
-      } else {
-        throw new Error(`Together AI API error: ${response.statusText}`);
-      }
+      return await response.json();
+    } catch (error) {
+      console.error('Error in makeApiRequest:', error);
+      // Return a fallback response for any other errors
+      return {
+        choices: [{
+          message: {
+            content: "I apologize, but I'm currently experiencing technical difficulties. Please try again in a few moments. In the meantime, you can:\n\n1. Check your transaction history\n2. Review your budget categories\n3. Track your savings goals"
+          }
+        }],
+        usage: {
+          prompt_tokens: 0,
+          completion_tokens: 0,
+          total_tokens: 0
+        }
+      };
     }
-
-    return await response.json();
-  } catch (error) {
-    if (retryCount < MAX_RETRIES && error instanceof Error && 
-        (error.message.includes('network') || error.message.includes('timeout'))) {
-      console.log(`Retrying request after error (${retryCount + 1}/${MAX_RETRIES})...`);
-      await delay(RETRY_DELAY * Math.pow(2, retryCount));
-      return makeApiRequest(prompt, retryCount + 1);
-    }
-    throw error;
   }
+
+  // Return a fallback response if all retries fail
+  return {
+    choices: [{
+      message: {
+        content: "I apologize, but I'm currently experiencing technical difficulties. Please try again in a few moments. In the meantime, you can:\n\n1. Check your transaction history\n2. Review your budget categories\n3. Track your savings goals"
+      }
+    }],
+    usage: {
+      prompt_tokens: 0,
+      completion_tokens: 0,
+      total_tokens: 0
+    }
+  };
 }
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -301,7 +328,7 @@ export async function POST(req: Request) {
     // Log intent without leaking keys or full prompt
     console.log('Calling Together AI with prompt length:', prompt.length);
 
-    const result = await makeApiRequest(prompt);
+    const result = await makeApiRequest(prompt, context);
     
     if (!result || !result.choices?.[0]?.message?.content) {
       throw new Error('No response content received from Together AI');

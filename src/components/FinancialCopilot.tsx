@@ -60,7 +60,11 @@ export default function FinancialCopilot() {
       console.error('Error:', error);
       const errorMessage: Message = {
         role: 'assistant',
-        content: error instanceof Error ? error.message : 'Sorry, I encountered an error. Please try again.',
+        content: error instanceof Error && error.message.includes('500') 
+          ? "I'm having trouble connecting to my AI service right now. Please try again in a few moments. In the meantime, you can:\n\n1. Review your recent transactions\n2. Check your budget categories\n3. Update your savings goals"
+          : error instanceof Error 
+            ? error.message 
+            : 'Sorry, I encountered an error. Please try again.',
       };
       setMessages(prev => [...prev, errorMessage]);
     } finally {
@@ -212,11 +216,14 @@ export default function FinancialCopilot() {
               ))}
               {isLoading && (
                 <div className="flex justify-start">
-                  <div className="bg-white border border-gray-200 rounded-lg p-3 text-gray-800 shadow-sm">
-                    <div className="flex items-center gap-2">
-                      <div className="w-2 h-2 bg-blue-600 rounded-full animate-bounce" />
-                      <div className="w-2 h-2 bg-blue-600 rounded-full animate-bounce delay-100" />
-                      <div className="w-2 h-2 bg-blue-600 rounded-full animate-bounce delay-200" />
+                  <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-100 rounded-lg p-4 text-gray-800 shadow-sm">
+                    <div className="flex items-center gap-3">
+                      <span className="text-sm font-medium text-blue-700">Reading your financials</span>
+                      <div className="flex gap-1">
+                        <div className="w-1.5 h-1.5 bg-blue-600 rounded-full animate-bounce" style={{ animationDuration: '0.6s' }} />
+                        <div className="w-1.5 h-1.5 bg-blue-600 rounded-full animate-bounce" style={{ animationDuration: '0.6s', animationDelay: '0.2s' }} />
+                        <div className="w-1.5 h-1.5 bg-blue-600 rounded-full animate-bounce" style={{ animationDuration: '0.6s', animationDelay: '0.4s' }} />
+                      </div>
                     </div>
                   </div>
                 </div>
