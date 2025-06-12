@@ -123,7 +123,7 @@ export async function POST(req: Request) {
       message: apiError.message,
       stack: apiError.stack,
     });
-    if (apiError.message.includes('Invalid API key')) {
+    if (apiError.message?.includes('Invalid API key')) {
       return NextResponse.json(
         {
           error: 'Authentication error',
@@ -138,7 +138,7 @@ export async function POST(req: Request) {
         { status: 401 }
       );
     }
-    if (apiError.message.includes('Rate limit')) {
+    if (apiError.message?.includes('Rate limit')) {
       return NextResponse.json(
         {
           error: 'Rate limit exceeded',
