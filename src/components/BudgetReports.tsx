@@ -57,7 +57,7 @@ export default function BudgetReports() {
   }
 
   // Date filtering logic
-  const now = new Date()
+  const now = useMemo(() => new Date(), [])
   const filteredTransactions = useMemo(() => {
     if (range === 'all') return transactions
     if (range === 'month') {

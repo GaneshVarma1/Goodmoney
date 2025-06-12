@@ -1,8 +1,9 @@
 'use client'
 
 import { Scene } from "@/components/ui/rubik-s-cube";
-import { SignInButton, SignedOut } from "@clerk/nextjs";
+import { SignInButton, SignedOut, SignedIn } from "@clerk/nextjs";
 import { Button } from "@/components/ui/button";
+import Link from "next/link";
 
 const DemoOne = () => {
   return (
@@ -24,6 +25,13 @@ const DemoOne = () => {
             </Button>
           </SignInButton>
         </SignedOut>
+        <SignedIn>
+          <Link href="/dashboard">
+            <Button className="bg-[var(--foreground)] text-[var(--background)] px-8 py-3 text-lg font-semibold hover:bg-opacity-90 transition-all duration-300 shadow-lg hover:shadow-xl rounded-xl border border-[var(--background)]">
+              Go to Dashboard
+            </Button>
+          </Link>
+        </SignedIn>
         <a
           href="https://github.com/GaneshVarma1"
           target="_blank"

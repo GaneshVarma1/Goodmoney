@@ -1,4 +1,4 @@
 declare module 'poly-decomp' {
-  const decomp: any;
+  const decomp: unknown;
   export default decomp;
 } 

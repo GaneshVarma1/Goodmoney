@@ -1,5 +1,5 @@
 import { Canvas } from "@react-three/fiber";
-import { PerspectiveCamera, useHelper } from "@react-three/drei";
+import { PerspectiveCamera } from "@react-three/drei";
 import { useThree, useFrame } from "@react-three/fiber";
 import { SpotLight, useDepthBuffer } from '@react-three/drei';
 import * as THREE from 'three';
@@ -7,25 +7,40 @@ import React, { Suspense, useRef, useState, useEffect, forwardRef, useMemo, useC
 import { Vector3, Matrix4, Quaternion } from "three";
 import { RoundedBox } from "@react-three/drei";
 
+type Cube = {
+  position: THREE.Vector3;
+  rotationMatrix: THREE.Matrix4;
+  id: string;
+  originalCoords: { x: number; y: number; z: number };
+};
+
+type Move = {
+  axis: 'x' | 'y' | 'z';
+  layer: number;
+  direction: number;
+  rotationAngle: number;
+};
+
 const RubiksCubeModel = forwardRef((props, ref) => {
   const ANIMATION_DURATION = 1.2;
   const GAP = 0.01;
   const RADIUS = 0.075;
   
-  const mainGroupRef = useRef();
+  const mainGroupRef = useRef<THREE.Group>(null);
   const isAnimatingRef = useRef(false);
   const currentRotationRef = useRef(0);
-  const lastMoveAxisRef = useRef(null);
-  const currentMoveRef = useRef(null);
-  const animationFrameRef = useRef(null);
+  const lastMoveAxisRef = useRef<string | null>(null);
+  const currentMoveRef = useRef<Move | null>(null);
+  const animationFrameRef = useRef<number | null>(null);
   const isMountedRef = useRef(true); 
   const viewportSizeRef = useRef({ width: window.innerWidth, height: window.innerHeight });
   
   const isResizingRef = useRef(false);
-  const resizeTimeoutRef = useRef(null);
+  const resizeTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   
-  const [size, setSize] = useState(0.8);
-  const [cubes, setCubes] = useState([]);
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const [size, setSize] = useState<number>(0.8);
+  const [cubes, setCubes] = useState<Array<Cube>>([]);
   const [isVisible, setIsVisible] = useState(true);
   const [deviceSettings, setDeviceSettings] = useState(() => {
     const isMobile = window.innerWidth < 768;
@@ -49,9 +64,9 @@ const RubiksCubeModel = forwardRef((props, ref) => {
     const initial = [];
     const positions = [-1, 0, 1];
     
-    for (let x of positions) {
-      for (let y of positions) {
-        for (let z of positions) {
+    for (const x of positions) {
+      for (const y of positions) {
+        for (const z of positions) {
           initial.push({
             position: new Vector3(x, y, z),
             rotationMatrix: new Matrix4().identity(),
@@ -102,126 +117,91 @@ const RubiksCubeModel = forwardRef((props, ref) => {
     }
   }, [initializeCubes]);
 
-  const handleViewportChange = useCallback(() => {
-    if (!isMountedRef.current) return;
-    
+  const handleResize = useCallback(() => {
+    if (isResizingRef.current) return;
     isResizingRef.current = true;
     
-    if (resizeTimeoutRef.current) {
-      clearTimeout(resizeTimeoutRef.current);
-    }
+    let throttleTimer: number | null = null;
     
-    resizeTimeoutRef.current = setTimeout(() => {
+    const updateSize = () => {
       if (!isMountedRef.current) return;
       
-      const width = window.innerWidth;
-      const height = window.innerHeight;
-      const visualViewportWidth = window.visualViewport ? window.visualViewport.width : width;
-      const visualViewportHeight = window.visualViewport ? window.visualViewport.height : height;
+      const newWidth = window.innerWidth;
+      const newHeight = window.innerHeight;
       
-      const effectiveWidth = Math.min(width, visualViewportWidth);
-      const effectiveHeight = Math.min(height, visualViewportHeight);
-      
-      const prevSize = viewportSizeRef.current;
-      if (Math.abs(prevSize.width - effectiveWidth) < 10 && 
-          Math.abs(prevSize.height - effectiveHeight) < 10) {
-        isResizingRef.current = false;
-        return;
+      if (newWidth !== viewportSizeRef.current.width || 
+          newHeight !== viewportSizeRef.current.height) {
+        viewportSizeRef.current = { width: newWidth, height: newHeight };
+        setDeviceSettings(prev => ({
+          ...prev,
+          smoothness: newWidth < 768 ? 2 : 4,
+          castShadow: newWidth >= 768,
+          receiveShadow: newWidth >= 768
+        }));
       }
       
-      viewportSizeRef.current = { width: effectiveWidth, height: effectiveHeight };
-      
-      const isMobile = effectiveWidth < 768;
-      setDeviceSettings(prevSettings => {
-        const newSettings = {
-          smoothness: isMobile ? 2 : 4,
-          castShadow: !isMobile,
-          receiveShadow: !isMobile
-        };
-        
-        if (prevSettings.smoothness !== newSettings.smoothness ||
-            prevSettings.castShadow !== newSettings.castShadow ||
-            prevSettings.receiveShadow !== newSettings.receiveShadow) {
-          return newSettings;
-        }
-        return prevSettings;
-      });
-      
       isResizingRef.current = false;
-    }, 150);
+      throttleTimer = null;
+    };
     
-  }, [resetCube]);
+    if (throttleTimer === null) {
+      throttleTimer = window.setTimeout(updateSize, 100);
+    }
+  }, []);
 
   useEffect(() => {
-    handleViewportChange();
+    handleResize();
     
-    let throttleTimer = null;
+    let throttleTimer: number | null = null;
     const throttledHandler = () => {
       if (throttleTimer) return;
-      throttleTimer = setTimeout(() => {
-        handleViewportChange();
+      throttleTimer = window.setTimeout(() => {
+        handleResize();
         throttleTimer = null;
       }, 100);
     };
     
-    window.addEventListener("resize", throttledHandler);
-    
-    if (window.visualViewport) {
-      window.visualViewport.addEventListener("resize", throttledHandler);
-      window.visualViewport.addEventListener("scroll", throttledHandler);
-    }
-    
-    const handleOrientationChange = () => {
-      if (isAnimatingRef.current) {
-        resetCube();
-      }
-      setTimeout(handleViewportChange, 100);
-    };
-    
-    window.addEventListener("orientationchange", handleOrientationChange);
+    window.addEventListener('resize', throttledHandler);
+    window.addEventListener('orientationchange', throttledHandler);
     
     return () => {
-      window.removeEventListener("resize", throttledHandler);
-      if (window.visualViewport) {
-        window.visualViewport.removeEventListener("resize", throttledHandler);
-        window.visualViewport.removeEventListener("scroll", throttledHandler);
-      }
-      window.removeEventListener("orientationchange", handleOrientationChange);
-      
+      window.removeEventListener('resize', throttledHandler);
+      window.removeEventListener('orientationchange', throttledHandler);
       if (throttleTimer) {
-        clearTimeout(throttleTimer);
+        window.clearTimeout(throttleTimer);
       }
     };
-  }, [handleViewportChange, resetCube]);
+  }, [handleResize]);
+
+  const handleVisibilityChange = useCallback(() => {
+    if (!isMountedRef.current) return;
+    
+    const timeoutId: number = window.setTimeout(() => {
+      setIsVisible(!document.hidden);
+      if (!document.hidden) {
+        handleResize();
+      }
+    }, 100);
+    
+    return () => {
+      if (timeoutId) {
+        window.clearTimeout(timeoutId);
+      }
+    };
+  }, [handleResize]);
 
   useEffect(() => {
-    const handleVisibilityChange = () => {
-      if (!isMountedRef.current) return;
-      const isPageVisible = document.visibilityState === "visible";
-      setIsVisible(isPageVisible);
-
-      if (!isPageVisible) {
-        resetCube();
-      } else {
-        setTimeout(() => {
-          if (isMountedRef.current) {
-            handleViewportChange();
-          }
-        }, 100);
-      }
-    };
-
-    document.addEventListener("visibilitychange", handleVisibilityChange);
+    document.addEventListener('visibilitychange', handleVisibilityChange);
     return () => {
-      document.removeEventListener("visibilitychange", handleVisibilityChange);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
     };
-  }, [resetCube, handleViewportChange]);
+  }, [handleVisibilityChange]);
 
   const possibleMoves = useMemo(() => {
-    const moves = [];
-    for (let axis of ['x', 'y', 'z']) {
-      for (let layer of [-1, 0, 1]) {
-        for (let direction of [1, -1]) {
+    const moves: Array<{ axis: 'x' | 'y' | 'z'; layer: number; direction: number }> = [];
+    for (const axis of ['x', 'y', 'z'] as const) {
+      for (const layer of [-1, 0, 1]) {
+        for (const direction of [1, -1]) {
           moves.push({ axis, layer, direction });
         }
       }
@@ -229,7 +209,11 @@ const RubiksCubeModel = forwardRef((props, ref) => {
     return moves;
   }, []);
 
-  const isInLayer = useCallback((position, axis, layer) => {
+  const isInLayer = useCallback((
+    position: THREE.Vector3,
+    axis: 'x' | 'y' | 'z',
+    layer: number
+  ) => {
     const coord = axis === "x" ? position.x : axis === "y" ? position.y : position.z;
     return Math.abs(coord - layer) < 0.1;
   }, []);
@@ -243,16 +227,20 @@ const RubiksCubeModel = forwardRef((props, ref) => {
       const move = availableMoves[Math.floor(Math.random() * availableMoves.length)];
       const rotationAngle = Math.PI / 2;
             
-      currentMoveRef.current = { ...move, rotationAngle };
+      currentMoveRef.current = {
+        axis: move.axis as 'x' | 'y' | 'z',
+        layer: move.layer,
+        direction: move.direction,
+        rotationAngle
+      };
       lastMoveAxisRef.current = move.axis;
       isAnimatingRef.current = true;
       currentRotationRef.current = 0;
-    } else {
     }
   }, [possibleMoves, isVisible]);
 
   useEffect(() => {
-    let timeoutId;
+    let timeoutId: NodeJS.Timeout | undefined;
 
     const scheduleNextMove = () => {
       if (isVisible && isMountedRef.current && !isResizingRef.current) {
@@ -288,27 +276,34 @@ const RubiksCubeModel = forwardRef((props, ref) => {
     };
   }, [isVisible, selectNextMove]);
 
-  const createRotationMatrix = useCallback((axis, angle) => {
+  const createRotationMatrix = useCallback((
+    axis: 'x' | 'y' | 'z',
+    angle: number
+  ) => {
     reusableMatrix4.identity();
     reusableQuaternion.identity();
     reusableVec3.set(0, 0, 0);
     
-    reusableVec3[axis] = 1;
+    reusableVec3.set(
+      axis === 'x' ? 1 : 0,
+      axis === 'y' ? 1 : 0,
+      axis === 'z' ? 1 : 0
+    );
     reusableQuaternion.setFromAxisAngle(reusableVec3, angle);
     return reusableMatrix4.makeRotationFromQuaternion(reusableQuaternion);
   }, [reusableMatrix4, reusableQuaternion, reusableVec3]);
 
-  const easeInOutQuad = useCallback((t) => {
+  const easeInOutQuad = useCallback((t: number) => {
     return t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2;
   }, []);
 
-  const matrixToQuaternion = useCallback((matrix) => {
+  const matrixToQuaternion = useCallback((matrix: THREE.Matrix4) => {
     reusableQuaternion.setFromRotationMatrix(matrix);
     return reusableQuaternion.clone();
   }, [reusableQuaternion]);
 
-  const normalizePositions = useCallback((cubes) => {
-    return cubes.map(cube => {
+  const normalizePositions = useCallback((cubes: Cube[]) => {
+    return cubes.map((cube: Cube) => {
       const x = Math.round(cube.position.x);
       const y = Math.round(cube.position.y);
       const z = Math.round(cube.position.z);
@@ -327,7 +322,7 @@ const RubiksCubeModel = forwardRef((props, ref) => {
     });
   }, []);
 
-  const checkCubeIntegrity = useCallback((cubes) => {
+  const checkCubeIntegrity = useCallback((cubes: Cube[]) => {
     if (cubes.length !== 27) {
       console.warn("Incorrect number of cubes:", cubes.length);
       return false;
@@ -344,8 +339,12 @@ const RubiksCubeModel = forwardRef((props, ref) => {
     return true;
   }, []);
 
-  const updateCubes = useCallback((prevCubes, move, stepRotationMatrix) => {
-    return prevCubes.map((cube) => {
+  const updateCubes = useCallback((
+    prevCubes: Cube[],
+    move: Move,
+    stepRotationMatrix: THREE.Matrix4
+  ) => {
+    return prevCubes.map((cube: Cube) => {
       if (isInLayer(cube.position, move.axis, move.layer)) {
         const tempVec3 = new Vector3(
           cube.position.x,
@@ -442,13 +441,67 @@ const RubiksCubeModel = forwardRef((props, ref) => {
     reflectivity: 0.5,
     iridescence: 0,
     iridescenceIOR: 0,
-    iridescenceThicknessRange: [100, 400],
+    iridescenceThicknessRange: [100, 400] as [number, number],
     envMapIntensity: 8
   }), []);
 
   const sharedMaterial = useMemo(() => (
     <meshPhysicalMaterial {...chromeMaterial} />
   ), [chromeMaterial]);
+
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const rotateLayer = useCallback((
+    position: THREE.Vector3,
+    axis: 'x' | 'y' | 'z',
+    layer: number,
+    angle: number
+  ) => {
+    const timeoutId: number = window.setTimeout(() => {
+      if (!isMountedRef.current) return;
+      const rotationMatrix = new THREE.Matrix4();
+      const rotationAxis = new THREE.Vector3();
+      switch (axis) {
+        case 'x': rotationAxis.set(1, 0, 0); break;
+        case 'y': rotationAxis.set(0, 1, 0); break;
+        case 'z': rotationAxis.set(0, 0, 1); break;
+      }
+      rotationMatrix.makeRotationAxis(rotationAxis, angle);
+      setCubes((prevCubes: Cube[]) =>
+        prevCubes.map((cube: Cube) => {
+          const pos = cube.position.clone();
+          const axisIdx = axis === 'x' ? 0 : axis === 'y' ? 1 : 2;
+          if (Math.abs(pos.getComponent(axisIdx) - layer) < 0.1) {
+            pos.applyMatrix4(rotationMatrix);
+          }
+          return { ...cube, position: pos };
+        })
+      );
+    }, 0);
+    return () => window.clearTimeout(timeoutId);
+  }, []);
+
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const rotateCube = useCallback((axis: 'x' | 'y' | 'z', angle: number) => {
+    const timeoutId: number = window.setTimeout(() => {
+      if (!isMountedRef.current) return;
+      const rotationMatrix = new THREE.Matrix4();
+      const rotationAxis = new THREE.Vector3();
+      switch (axis) {
+        case 'x': rotationAxis.set(1, 0, 0); break;
+        case 'y': rotationAxis.set(0, 1, 0); break;
+        case 'z': rotationAxis.set(0, 0, 1); break;
+      }
+      rotationMatrix.makeRotationAxis(rotationAxis, angle);
+      setCubes((prevCubes: Cube[]) =>
+        prevCubes.map((cube: Cube) => {
+          const pos = cube.position.clone();
+          pos.applyMatrix4(rotationMatrix);
+          return { ...cube, position: pos };
+        })
+      );
+    }, 0);
+    return () => window.clearTimeout(timeoutId);
+  }, []);
 
   return (
     <group ref={mainGroupRef} {...props}>
@@ -477,6 +530,7 @@ const RubiksCubeModel = forwardRef((props, ref) => {
   );
 });
 
+RubiksCubeModel.displayName = 'RubiksCubeModel';
 
 function CameraController() {
   const { camera } = useThree();
@@ -488,8 +542,26 @@ function CameraController() {
   return null;
 }
 
-function EnhancedSpotlight(props) {
-  const light = useRef();
+interface SpotlightProps {
+  depthBuffer: THREE.DepthTexture;
+  color: string;
+  position: [number, number, number];
+  volumetric: boolean;
+  opacity: number;
+  penumbra: number;
+  distance: number;
+  angle: number;
+  attenuation: number;
+  anglePower: number;
+  intensity: number;
+  shadowMapSize: number;
+  shadowBias: number;
+  shadowAutoUpdate: boolean;
+  castShadow: boolean;
+}
+
+function EnhancedSpotlight(props: SpotlightProps) {
+  const light = useRef<THREE.SpotLight>(null);
   
   // Uncomment to see a visual helper for the spotlight
   //useHelper(spotlightRef, THREE.SpotLightHelper, 'red');
@@ -504,9 +576,9 @@ function EnhancedSpotlight(props) {
   return (
     <>
       <SpotLight 
-        castShadow={false}
         ref={light} 
-        {...props} 
+        {...props}
+        castShadow={false} 
       />
     </>
   );
@@ -516,8 +588,7 @@ function SceneContent() {
 
   const depthBuffer = useDepthBuffer({ 
     size: 2048,
-    frames: 1,
-    disableRenderLoop: true 
+    frames: 1
   });
   
   const [time, setTime] = useState(0);
@@ -525,12 +596,20 @@ function SceneContent() {
     setTime(state.clock.getElapsedTime());
   });
   
+  const spotlightPosition = useMemo(() => {
+    return [
+      3 + Math.sin(time * 0.5) * 0.5,  // subtle x movement
+      3 + Math.cos(time * 0.5) * 0.5,  // subtle y movement
+      2
+    ];
+  }, [time]);
+  
   return (
     <>
       <EnhancedSpotlight 
         depthBuffer={depthBuffer} 
         color="#aaaace" 
-        position={[3, 3, 2]}
+        position={spotlightPosition as [number, number, number]}
         volumetric={true}
         opacity={1}
         penumbra={1}
@@ -556,7 +635,7 @@ function SceneContent() {
       <CameraController />
 
       <Suspense fallback={null}>
-        <RubiksCubeModel position={[0, 0, 0]} scale={1} />
+        <RubiksCubeModel ref={undefined} />
       </Suspense>
     </>
   );
