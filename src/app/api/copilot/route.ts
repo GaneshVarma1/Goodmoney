@@ -128,7 +128,7 @@ async function getChatHistory(userId: string, limit: number = 10): Promise<ChatM
     return [];
   }
 
-  return (data ?? []) as ChatMessage[];
+  return (data ?? []) as unknown as ChatMessage[];
 }
 
 async function getTransactionData(userId: string): Promise<{
@@ -155,7 +155,7 @@ async function getTransactionData(userId: string): Promise<{
     };
   }
 
-  const transactions = (rawTx ?? []) as Transaction[];
+  const transactions = (rawTx ?? []) as unknown as Transaction[];
 
   const totalIncome = transactions
     .filter(t => t.type === 'income')
@@ -276,4 +276,86 @@ export async function POST(req: Request) {
         
         Recent Transactions:
         ${transactionData.recentTransactions.map(t => 
-          `
+          `- ${t.date}: ${t.type} of $${t.amount.toFixed(2)} in ${t.category}${t.description ? ` (${t.description})` : ''}`
+        ).join('\n')}
+        
+        Category Breakdown:
+        ${Object.entries(transactionData.categoryBreakdown)
+          .map(([category, amount]) => `- ${category}: $${amount.toFixed(2)}`)
+          .join('\n')}
+      `;
+
+      prompt = `
+        You are a financial assistant helping a user manage their finances.
+        
+        ${financialContext}
+        
+        Recent conversation history:
+        ${recentMessages}
+        
+        User's question: ${message}
+        
+        Please provide a helpful, concise response focusing on financial advice and insights.
+        Use the provided financial data to give personalized recommendations.
+        Consider the conversation history for context and continuity.
+        When discussing spending patterns or categories, reference the actual data provided.
+        If suggesting budget adjustments, base them on the user's current spending patterns.
+        
+        Format your response using markdown:
+        - Use # for main headings
+        - Use ## for subheadings
+        - Use bullet points (-) for lists
+        - Use paragraphs for detailed explanations
+        - Use **bold** for emphasis on important points
+        - Use line breaks between sections for better readability
+        
+        Structure your response with:
+        1. A clear heading summarizing the main point
+        2. Key insights or recommendations as bullet points
+        3. Detailed explanations in paragraphs
+        4. Action items or next steps if applicable
+      `;
+    }
+
+    // Log intent without leaking keys or full prompt
+    console.log('Calling Together AI with prompt length:', prompt.length);
+
+    const result = await makeApiRequest(prompt);
+    
+    if (!result || !result.choices?.[0]?.message?.content) {
+      throw new Error('No response content received from Together AI');
+    }
+
+    const assistantResponse = result.choices[0].message.content;
+
+    // Save assistant's response
+    await saveMessage(userId, 'assistant', assistantResponse);
+
+    return NextResponse.json({
+      response: assistantResponse,
+      usage: result.usage
+    });
+  } catch (error: unknown) {
+    const apiError = error as Error;
+    console.error('Copilot route error:', apiError.message);
+
+    // Specific error handling
+    if (apiError.message.includes('Invalid API key')) {
+      return NextResponse.json(
+        { error: 'Authentication error', message: 'Invalid API key.' },
+        { status: 401 }
+      );
+    }
+    if (apiError.message.includes('Rate limit')) {
+      return NextResponse.json(
+        { error: 'Rate limit exceeded', message: 'Please try again later.' },
+        { status: 429 }
+      );
+    }
+
+    return NextResponse.json(
+      { error: 'Unexpected error', message: 'An unexpected error occurred.' },
+      { status: 500 }
+    );
+  }
+}
