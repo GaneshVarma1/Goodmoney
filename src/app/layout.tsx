@@ -13,7 +13,7 @@ const righteous = Righteous({
 });
 
 export const metadata: Metadata = {
-  title: "Good Money",
+  title: "Good Money - Save your money",
   description: "Track your finances and achieve your financial goals",
 };
 
