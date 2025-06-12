@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect } from 'react'
 import { motion } from 'framer-motion'
-import { MdHome, MdAttachMoney, MdBarChart, MdDescription, MdMenu, MdClose, MdTrackChanges } from 'react-icons/md'
+import { MdHome, MdAttachMoney, MdBarChart, MdDescription, MdMenu, MdClose, MdTrackChanges, MdChat } from 'react-icons/md'
 import TransactionForm from './TransactionForm'
 import TransactionList from './TransactionList'
 import BudgetInsights from './BudgetInsights'
@@ -11,14 +11,17 @@ import FinancialOverview from './FinancialOverview'
 import { UserButton, SignedIn, useUser } from '@clerk/nextjs'
 import { BudgetDataProvider } from './BudgetDataContext'
 import SavingsGoals from './SavingsGoals'
+import { useAuth } from '@clerk/nextjs'
+import { AiChatPanel } from './AiChatPanel'
 
-type Tab = 'overview' | 'transactions' | 'goals' | 'insights' | 'reports'
+type Tab = 'overview' | 'transactions' | 'goals' | 'insights' | 'reports' | 'ai-chat'
 
 export default function Dashboard() {
   const [activeTab, setActiveTab] = useState<Tab>('overview')
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const sidebarRef = useRef<HTMLDivElement>(null)
   const { user } = useUser();
+  const { userId } = useAuth();
 
   const tabs: { id: Tab; label: string; icon: React.ReactNode }[] = [
     { id: 'overview', label: 'Overview', icon: <MdHome className="w-5 h-5" /> },
@@ -26,6 +29,7 @@ export default function Dashboard() {
     { id: 'goals', label: 'Goals', icon: <MdTrackChanges className="w-5 h-5" /> },
     { id: 'insights', label: 'Insights', icon: <MdBarChart className="w-5 h-5" /> },
     { id: 'reports', label: 'Reports', icon: <MdDescription className="w-5 h-5" /> },
+    { id: 'ai-chat', label: 'AI Assistant', icon: <MdChat className="w-5 h-5" /> },
   ]
 
   const tabDescriptions: Record<Tab, string> = {
@@ -34,6 +38,7 @@ export default function Dashboard() {
     goals: 'Track your savings goals and progress',
     insights: 'Get insights into your spending patterns',
     reports: 'Generate and export detailed financial reports',
+    'ai-chat': 'Chat with your AI financial assistant',
   }
 
   // Close sidebar when clicking outside (on mobile)
@@ -47,6 +52,11 @@ export default function Dashboard() {
     document.addEventListener('mousedown', handleClick);
     return () => document.removeEventListener('mousedown', handleClick);
   }, [sidebarOpen]);
+
+  const handleTabClick = (tab: Tab) => {
+    setActiveTab(tab);
+    setSidebarOpen(false);
+  };
 
   return (
     <BudgetDataProvider>
@@ -100,7 +110,7 @@ export default function Dashboard() {
                   key={tab.id}
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
-                  onClick={() => { setActiveTab(tab.id); setSidebarOpen(false); }}
+                  onClick={() => handleTabClick(tab.id)}
                   className={`w-full flex items-center gap-3 px-4 py-3 text-sm font-medium rounded-lg transition-colors ${
                     activeTab === tab.id
                       ? 'bg-blue-50 text-blue-700'
@@ -129,7 +139,7 @@ export default function Dashboard() {
         )}
 
         {/* Main Content Area */}
-        <main className="flex-1 transition-all duration-300 ease-in-out">
+        <main className="flex-1 transition-all duration-300 ease-in-out md:ml-64">
           <div className="px-2 sm:px-4 lg:px-8 py-8">
             <div className="mb-6">
               <h2 className="text-xl font-semibold text-gray-900">
@@ -139,21 +149,19 @@ export default function Dashboard() {
                 {tabDescriptions[activeTab]}
               </p>
             </div>
-            {activeTab === 'reports' ? (
-              <BudgetReports />
-            ) : (
-              <div className="space-y-6 bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-                {activeTab === 'overview' && <FinancialOverview />}
-                {activeTab === 'transactions' && (
-                  <>
-                    <TransactionForm />
-                    <TransactionList />
-                  </>
-                )}
-                {activeTab === 'goals' && <SavingsGoals />}
-                {activeTab === 'insights' && <BudgetInsights />}
-              </div>
-            )}
+            <div className="space-y-6">
+              {activeTab === 'overview' && <FinancialOverview />}
+              {activeTab === 'transactions' && (
+                <>
+                  <TransactionForm />
+                  <TransactionList />
+                </>
+              )}
+              {activeTab === 'goals' && <SavingsGoals />}
+              {activeTab === 'insights' && <BudgetInsights />}
+              {activeTab === 'reports' && <BudgetReports />}
+              {activeTab === 'ai-chat' && userId && <AiChatPanel userId={userId} />}
+            </div>
           </div>
         </main>
         <footer className="mt-8 text-center text-gray-500 text-sm">
