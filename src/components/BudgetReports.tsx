@@ -2,9 +2,11 @@
 import { useState, useMemo, useCallback, useEffect, useRef } from 'react'
 import { format, parseISO, isWithinInterval } from 'date-fns'
 import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, Legend, PieChart, Pie, Cell } from 'recharts'
-import { useStore } from '@/store/useStore'
+import { useDatabase } from '@/hooks/useDatabase'
 import toast from 'react-hot-toast'
 import { generatePDF, generatePDFAsBase64 } from '@/utils/pdfExport'
+import { useAuth } from '@clerk/nextjs'
+import { Transaction } from '@/lib/supabase'
 
 const COLORS = [
   '#6366F1', '#F59E42', '#10B981', '#F43F5E', '#3B82F6', '#FBBF24', '#8B5CF6', '#EC4899', '#22D3EE', '#84CC16', '#E11D48', '#A3A3A3',
@@ -17,7 +19,10 @@ const dateRanges = [
 ]
 
 export default function BudgetReports() {
-  const { transactions } = useStore()
+  const { isLoaded, isSignedIn } = useAuth()
+  const { getTransactions } = useDatabase()
+  const [transactions, setTransactions] = useState<Transaction[]>([])
+  const [loading, setLoading] = useState(true)
   const [range, setRange] = useState('month')
   const [customRange, setCustomRange] = useState({ from: '', to: '' })
   const [email, setEmail] = useState('')
@@ -30,6 +35,26 @@ export default function BudgetReports() {
   useEffect(() => {
     setIsClient(true)
   }, [])
+
+  // Fetch transactions
+  useEffect(() => {
+    if (isLoaded && isSignedIn) {
+      fetchTransactions()
+    }
+  }, [isLoaded, isSignedIn])
+
+  const fetchTransactions = async () => {
+    try {
+      setLoading(true)
+      const data = await getTransactions()
+      setTransactions(data)
+    } catch (error) {
+      console.error('Error fetching transactions:', error)
+      toast.error('Failed to load transactions')
+    } finally {
+      setLoading(false)
+    }
+  }
 
   // Date filtering logic
   const now = new Date()
@@ -126,6 +151,20 @@ export default function BudgetReports() {
 
   // Don't render export button until client-side
   if (!isClient) {
+    return (
+      <div className="flex flex-col gap-6 bg-white p-4 sm:p-6 w-full">
+        <div className="animate-pulse">
+          <div className="h-8 bg-gray-200 rounded w-32 mb-4"></div>
+          <div className="space-y-3">
+            <div className="h-4 bg-gray-200 rounded w-3/4"></div>
+            <div className="h-4 bg-gray-200 rounded w-1/2"></div>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  if (loading) {
     return (
       <div className="flex flex-col gap-6 bg-white p-4 sm:p-6 w-full">
         <div className="animate-pulse">

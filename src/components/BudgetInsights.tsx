@@ -1,6 +1,10 @@
 'use client'
 import { motion } from 'framer-motion'
-import { useStore } from '@/store/useStore'
+import { useDatabase } from '@/hooks/useDatabase'
+import { useAuth } from '@clerk/nextjs'
+import { useState, useEffect } from 'react'
+import { Transaction } from '@/lib/supabase'
+import toast from 'react-hot-toast'
 
 interface Insight {
   id: string
@@ -11,7 +15,29 @@ interface Insight {
 }
 
 export default function BudgetInsights() {
-  const transactions = useStore((state) => state.transactions)
+  const { isLoaded, isSignedIn } = useAuth()
+  const { getTransactions } = useDatabase()
+  const [transactions, setTransactions] = useState<Transaction[]>([])
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    if (isLoaded && isSignedIn) {
+      fetchTransactions()
+    }
+  }, [isLoaded, isSignedIn])
+
+  const fetchTransactions = async () => {
+    try {
+      setLoading(true)
+      const data = await getTransactions()
+      setTransactions(data)
+    } catch (error) {
+      console.error('Error fetching transactions:', error)
+      toast.error('Failed to load transactions')
+    } finally {
+      setLoading(false)
+    }
+  }
 
   // Calculate insights based on transaction data
   const calculateInsights = (): Insight[] => {
@@ -86,6 +112,25 @@ export default function BudgetInsights() {
     })
 
     return insights
+  }
+
+  if (!isLoaded || !isSignedIn) {
+    return <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 text-center">Loading...</div>
+  }
+
+  if (loading) {
+    return (
+      <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+        <div className="animate-pulse space-y-4">
+          <div className="h-8 bg-gray-200 rounded w-1/4"></div>
+          <div className="space-y-3">
+            <div className="h-16 bg-gray-200 rounded"></div>
+            <div className="h-16 bg-gray-200 rounded"></div>
+            <div className="h-16 bg-gray-200 rounded"></div>
+          </div>
+        </div>
+      </div>
+    )
   }
 
   const insights = calculateInsights()
