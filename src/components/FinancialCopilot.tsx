@@ -124,7 +124,6 @@ export default function FinancialCopilot() {
                     }`}
                   >
                     <div className="prose prose-sm max-w-none">
-                      {/* @ts-expect-error - formatMessage is not typed */}
                       {formatMessage(message.content)}
                     </div>
                   </div>
