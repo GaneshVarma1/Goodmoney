@@ -4,6 +4,7 @@ import "./globals.css";
 import { Toaster } from 'react-hot-toast'
 import { ClerkProvider } from '@clerk/nextjs';
 import AuthSyncer from '@/components/AuthSyncer';
+import FinancialCopilot from '@/components/FinancialCopilot';
 
 const inter = Inter({ subsets: ["latin"] });
 const righteous = Righteous({ 
@@ -32,6 +33,7 @@ export default function RootLayout({
           <Toaster position="top-right" toastOptions={{
             style: { fontSize: '1rem', borderRadius: '0.75rem', padding: '1rem 1.5rem' },
           }} />
+          <FinancialCopilot />
         </body>
       </html>
     </ClerkProvider>
