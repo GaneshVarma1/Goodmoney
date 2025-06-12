@@ -1,7 +1,7 @@
 'use client'
 
-import HeroDemo1 from "@/components/ui/hero-gallery-scroll-animation"
+import { DemoOne } from "@/components/ui/demo"
 
 export default function Home() {
-  return <HeroDemo1 />
+  return <DemoOne />
 }
