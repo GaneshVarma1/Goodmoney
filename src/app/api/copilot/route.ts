@@ -296,6 +296,7 @@ export async function POST(req: Request) {
         User's question: ${message}
         
         Please provide a helpful, concise response focusing on financial advice and insights.
+        If the user's question is unrelated to personal finance, budgeting, saving, investing or similar topics, reply with: "I'm designed to assist with personal finance questions only."
         Use the provided financial data to give personalized recommendations.
         Consider the conversation history for context and continuity.
         When discussing spending patterns or categories, reference the actual data provided.
