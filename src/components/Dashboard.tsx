@@ -60,9 +60,8 @@ export default function Dashboard() {
                 onClick={() => setSidebarOpen((open) => !open)}
                 aria-label={sidebarOpen ? 'Close sidebar' : 'Open sidebar'}
               >
-                {sidebarOpen ? <MdClose className="w-6 h-6" /> : <MdMenu className="w-6 h-6" />}
+                {sidebarOpen ? <MdClose className="w-6 h-6 text-gray-900" /> : <MdMenu className="w-6 h-6 text-gray-900" />}
               </button>
-              <h1 className="text-2xl font-bold text-gray-900">Good Money</h1>
             </div>
             <SignedIn>
               <UserButton afterSignOutUrl="/" />
@@ -78,13 +77,21 @@ export default function Dashboard() {
             style={{ maxWidth: '100vw' }}
           >
             <div className="flex items-center justify-between p-4 border-b border-gray-100">
-              <h2 className="text-lg font-semibold text-gray-900">Good Money</h2>
+              <motion.h2 
+                className="text-xl font-extrabold tracking-tight text-gray-900"
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ duration: 0.5 }}
+                style={{ fontFamily: 'var(--font-righteous)' }}
+              >
+                Good Money
+              </motion.h2>
               <button
                 className="p-2 rounded-lg hover:bg-gray-100 focus:outline-none"
                 onClick={() => setSidebarOpen(false)}
                 aria-label="Close sidebar"
               >
-                <MdClose className="w-6 h-6" />
+                <MdClose className="w-6 h-6 text-gray-900" />
               </button>
             </div>
             <nav className="space-y-1 p-4">
@@ -150,7 +157,7 @@ export default function Dashboard() {
           </div>
         </main>
         <footer className="mt-8 text-center text-gray-500 text-sm">
-          Built to save your money by <a href="https://bit.ly/sriport" target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">this guy</a>
+          Built to save your money by <a href="https://bit.ly/sriport" target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">this guy😎 </a>
         </footer>
       </div>
     </BudgetDataProvider>

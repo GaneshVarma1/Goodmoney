@@ -277,9 +277,9 @@ export default function BudgetReports() {
 
         {/* Charts */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 w-full">
-          <div className="bg-white rounded-xl shadow border p-2 sm:p-4 flex flex-col w-full min-h-[200px] h-[40vw] max-h-[400px]">
+          <div className="bg-white rounded-xl shadow border p-2 sm:p-4 flex flex-col w-full h-[300px] sm:h-[400px]">
             <h2 className="text-lg font-semibold mb-2 text-gray-900">Income vs Expenses</h2>
-            <div className="flex-1 min-h-[150px]">
+            <div className="flex-1">
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={monthlyData} margin={{ top: 16, right: 16, left: 0, bottom: 0 }}>
                   <XAxis dataKey="month" stroke="#888" fontSize={12} />
@@ -292,9 +292,9 @@ export default function BudgetReports() {
               </ResponsiveContainer>
             </div>
           </div>
-          <div className="bg-white rounded-xl shadow border p-2 sm:p-4 flex flex-col w-full min-h-[200px] h-[40vw] max-h-[400px]">
+          <div className="bg-white rounded-xl shadow border p-2 sm:p-4 flex flex-col w-full h-[300px] sm:h-[400px]">
             <h2 className="text-lg font-semibold mb-2 text-gray-900">Expenses by Category</h2>
-            <div className="flex-1 min-h-[150px]">
+            <div className="flex-1">
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
                   <Pie

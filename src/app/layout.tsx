@@ -1,11 +1,16 @@
 import type { Metadata } from "next";
-import { Inter } from "next/font/google";
+import { Inter, Righteous } from "next/font/google";
 import "./globals.css";
 import { Toaster } from 'react-hot-toast'
 import { ClerkProvider } from '@clerk/nextjs';
 import AuthSyncer from '@/components/AuthSyncer';
 
 const inter = Inter({ subsets: ["latin"] });
+const righteous = Righteous({ 
+  weight: '400',
+  subsets: ["latin"],
+  variable: '--font-righteous',
+});
 
 export const metadata: Metadata = {
   title: "Good Money",
@@ -20,7 +25,7 @@ export default function RootLayout({
   return (
     <ClerkProvider>
       <html lang="en" className="h-full">
-        <body className={`${inter.className} h-full antialiased`}>
+        <body className={`${inter.className} ${righteous.variable} h-full antialiased`}>
           <AuthSyncer>
             {children}
           </AuthSyncer>

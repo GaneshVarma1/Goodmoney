@@ -3,15 +3,14 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { useDatabase } from '@/hooks/useDatabase';
-import { Transaction, BudgetCategory, SavingsGoal } from '@/lib/supabase';
+import { Transaction, SavingsGoal } from '@/lib/supabase';
 import toast from 'react-hot-toast';
 import { useAuth } from '@clerk/nextjs';
 
 export default function FinancialOverview() {
   const { isLoaded, isSignedIn } = useAuth();
-  const { getTransactions, getCategories, getSavingsGoals } = useDatabase();
+  const { getTransactions, getSavingsGoals } = useDatabase();
   const [transactions, setTransactions] = useState<Transaction[]>([]);
-  const [categories, setCategories] = useState<BudgetCategory[]>([]);
   const [goals, setGoals] = useState<SavingsGoal[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -25,13 +24,11 @@ export default function FinancialOverview() {
   const fetchData = async () => {
     try {
       setLoading(true);
-      const [fetchedTransactions, fetchedCategories, fetchedGoals] = await Promise.all([
+      const [fetchedTransactions, fetchedGoals] = await Promise.all([
         getTransactions(),
-        getCategories(),
         getSavingsGoals(),
       ]);
       setTransactions(fetchedTransactions);
-      setCategories(fetchedCategories);
       setGoals(fetchedGoals);
     } catch (error) {
       console.error('Error fetching dashboard data:', error);
@@ -60,18 +57,6 @@ export default function FinancialOverview() {
   const savingsProgress = totalSavingsTarget > 0 
     ? (totalCurrentSavings / totalSavingsTarget) * 100 
     : 0;
-
-  // Calculate category spending
-  const categorySpending = categories.map(category => {
-    const spent = transactions
-      .filter(t => t.type === 'expense' && t.category === category.name)
-      .reduce((sum, t) => sum + t.amount, 0);
-    return {
-      ...category,
-      spent,
-      percentage: (spent / category.monthly_limit) * 100,
-    };
-  });
 
   if (loading) {
     return (
@@ -128,36 +113,6 @@ export default function FinancialOverview() {
             {savingsProgress.toFixed(1)}%
           </p>
         </motion.div>
-      </div>
-
-      {/* Budget Categories */}
-      <div className="mb-8">
-        <h3 className="text-lg font-medium text-gray-900 mb-4">Budget Categories</h3>
-        <div className="space-y-4">
-          {categorySpending.map((category) => (
-            <motion.div
-              key={category.id}
-              initial={{ opacity: 0, x: -20 }}
-              animate={{ opacity: 1, x: 0 }}
-              className="bg-gray-50 p-4 rounded-lg"
-            >
-              <div className="flex justify-between items-center mb-2">
-                <h4 className="font-medium text-gray-900">{category.name}</h4>
-                <span className="text-sm text-gray-600">
-                  ${category.spent.toFixed(2)} / ${category.monthly_limit.toFixed(2)}
-                </span>
-              </div>
-              <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
-                <div
-                  className={`h-full rounded-full transition-all duration-300 ${
-                    category.percentage > 100 ? 'bg-red-500' : 'bg-blue-500'
-                  }`}
-                  style={{ width: `${Math.min(category.percentage, 100)}%` }}
-                />
-              </div>
-            </motion.div>
-          ))}
-        </div>
       </div>
 
       {/* Savings Goals */}
