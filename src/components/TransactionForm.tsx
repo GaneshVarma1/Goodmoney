@@ -1,7 +1,7 @@
 'use client'
 import { useState } from 'react'
 import { motion } from 'framer-motion'
-import { useDatabase } from '@/hooks/useDatabase'
+import { useBudgetData } from '@/components/BudgetDataContext'
 import toast from 'react-hot-toast'
 import { useAuth } from '@clerk/nextjs'
 
@@ -31,7 +31,7 @@ const DEFAULT_CATEGORIES = {
 
 export default function TransactionForm() {
   const { isLoaded, isSignedIn } = useAuth();
-  const { addTransaction } = useDatabase()
+  const { addTransaction } = useBudgetData()
   const [type, setType] = useState<'income' | 'expense'>('expense')
   const [amount, setAmount] = useState('')
   const [category, setCategory] = useState('')
