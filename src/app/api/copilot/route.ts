@@ -115,20 +115,10 @@ async function makeApiRequest(prompt: string, retryCount = 0): Promise<TogetherA
   }
 }
 
-async function getChatHistory(userId: string, limit: number = 10): Promise<ChatMessage[]> {
-  const { data, error } = await supabase
-    .from('chat_messages')
-    .select('*')
-    .eq('user_id', userId)
-    .order('created_at', { ascending: false })
-    .limit(limit);
-
-  if (error) {
-    console.error('Error fetching chat history:', error);
-    return [];
-  }
-
-  return (data ?? []) as unknown as ChatMessage[];
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+async function getChatHistory(_userId: string, _limit: number = 10): Promise<ChatMessage[]> {
+  // Return empty array since we're not saving messages
+  return [];
 }
 
 async function getTransactionData(userId: string): Promise<{
@@ -181,20 +171,10 @@ async function getTransactionData(userId: string): Promise<{
   };
 }
 
-async function saveMessage(userId: string, role: 'user' | 'assistant', content: string): Promise<void> {
-  const { error } = await supabase
-    .from('chat_messages')
-    .insert([
-      {
-        user_id: userId,
-        role,
-        content,
-      }
-    ]);
-
-  if (error) {
-    console.error('Error saving message:', error);
-  }
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+async function saveMessage(_userId: string, _role: 'user' | 'assistant', _content: string): Promise<void> {
+  // Skip saving messages for now
+  return;
 }
 
 export async function POST(req: Request) {
