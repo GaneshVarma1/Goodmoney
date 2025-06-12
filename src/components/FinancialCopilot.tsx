@@ -2,9 +2,9 @@
 
 import { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { MessageCircle, X, Send, FileText, Maximize2, Minimize2 } from 'lucide-react';
+import { MessageCircle, X, Minimize2, Maximize2, Send } from 'lucide-react';
 import { useAuth } from '@clerk/nextjs';
-import React from 'react';
+import { formatMessage } from '@/utils/messageFormatting';
 
 interface Message {
   role: 'user' | 'assistant';
@@ -18,7 +18,6 @@ export default function FinancialCopilot() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const [isSummarizing, setIsSummarizing] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const scrollToBottom = () => {
@@ -60,92 +59,12 @@ export default function FinancialCopilot() {
       console.error('Error:', error);
       const errorMessage: Message = {
         role: 'assistant',
-        content: error instanceof Error && error.message.includes('500') 
-          ? "I'm having trouble connecting to my AI service right now. Please try again in a few moments. In the meantime, you can:\n\n1. Review your recent transactions\n2. Check your budget categories\n3. Update your savings goals"
-          : error instanceof Error 
-            ? error.message 
-            : 'Sorry, I encountered an error. Please try again.',
+        content: error instanceof Error ? error.message : 'Sorry, I encountered an error. Please try again.',
       };
       setMessages(prev => [...prev, errorMessage]);
     } finally {
       setIsLoading(false);
     }
-  };
-
-  const handleSummarize = async () => {
-    if (messages.length === 0 || !userId) return;
-    
-    setIsSummarizing(true);
-    try {
-      const response = await fetch('/api/copilot', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
-          message: "Please summarize the key points from our conversation so far.",
-          context: messages.map(m => `${m.role}: ${m.content}`).join('\n'),
-          userId
-        }),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Failed to summarize');
-      }
-
-      const data = await response.json();
-      const summaryMessage: Message = { 
-        role: 'assistant', 
-        content: `📝 **Conversation Summary**\n\n${data.response}` 
-      };
-      setMessages(prev => [...prev, summaryMessage]);
-    } catch (error) {
-      console.error('Error:', error);
-      const errorMessage: Message = {
-        role: 'assistant',
-        content: error instanceof Error ? error.message : 'Sorry, I encountered an error while summarizing. Please try again.',
-      };
-      setMessages(prev => [...prev, errorMessage]);
-    } finally {
-      setIsSummarizing(false);
-    }
-  };
-
-  const toggleExpand = () => {
-    setIsExpanded(!isExpanded);
-  };
-
-  const formatMessage = (content: string) => {
-    // Split content into paragraphs
-    const paragraphs = content.split('\n\n');
-    
-    return paragraphs.map((paragraph, index) => {
-      // Check if paragraph is a list item
-      if (paragraph.trim().startsWith('- ')) {
-        return (
-          <ul key={index} className="list-disc list-inside space-y-1">
-            {paragraph.split('\n').map((item, itemIndex) => (
-              <li key={itemIndex} className="ml-4">{item.replace('- ', '')}</li>
-            ))}
-          </ul>
-        );
-      }
-      
-      // Check if paragraph is a heading (starts with #)
-      if (paragraph.trim().startsWith('#')) {
-        const level = paragraph.match(/^#+/)?.[0].length || 1;
-        const text = paragraph.replace(/^#+\s*/, '');
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const HeadingTag = `h${level}` as any;
-        return React.createElement(
-          HeadingTag,
-          { key: index, className: 'font-semibold mb-2' },
-          text
-        );
-      }
-      
-      // Regular paragraph
-      return <p key={index} className="mb-2">{paragraph}</p>;
-    });
   };
 
   return (
@@ -168,27 +87,23 @@ export default function FinancialCopilot() {
             className={`fixed ${
               isExpanded 
                 ? 'inset-4 md:inset-8 lg:inset-12' 
-                : 'bottom-24 right-6 w-96'
-            } bg-white rounded-lg shadow-xl flex flex-col transition-all duration-300 ease-in-out`}
+                : 'bottom-24 right-6 w-[calc(100vw-3rem)] md:w-96'
+            } bg-white rounded-lg shadow-xl flex flex-col transition-all duration-300 ease-in-out max-h-[calc(100vh-8rem)]`}
           >
-            <div className="p-4 border-b flex justify-between items-center bg-gradient-to-r from-blue-50 to-indigo-50">
-              <h2 className="text-lg font-semibold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
-                Financial Copilot
-              </h2>
+            <div className="flex items-center justify-between p-4 border-b">
+              <h3 className="text-lg font-semibold text-gray-900">AI Financial Assistant</h3>
               <div className="flex items-center gap-2">
                 <button
-                  onClick={handleSummarize}
-                  disabled={isSummarizing || messages.length === 0}
-                  className="flex items-center gap-2 px-3 py-1.5 text-sm bg-white hover:bg-gray-50 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed border border-gray-200"
-                >
-                  <FileText size={16} />
-                  {isSummarizing ? 'Summarizing...' : 'Summarize Chat'}
-                </button>
-                <button
-                  onClick={toggleExpand}
-                  className="p-1.5 hover:bg-gray-100 rounded-lg transition-colors"
+                  onClick={() => setIsExpanded(!isExpanded)}
+                  className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
                 >
                   {isExpanded ? <Minimize2 size={20} /> : <Maximize2 size={20} />}
+                </button>
+                <button
+                  onClick={() => setIsOpen(false)}
+                  className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                >
+                  <X size={20} />
                 </button>
               </div>
             </div>
@@ -209,6 +124,7 @@ export default function FinancialCopilot() {
                     }`}
                   >
                     <div className="prose prose-sm max-w-none">
+                      {/* @ts-expect-error - formatMessage is not typed */}
                       {formatMessage(message.content)}
                     </div>
                   </div>
@@ -231,24 +147,25 @@ export default function FinancialCopilot() {
               <div ref={messagesEndRef} />
             </div>
 
-            <form onSubmit={handleSubmit} className="p-4 border-t bg-white">
-              <div className="flex space-x-2">
+            <div className="p-4 border-t">
+              <form onSubmit={handleSubmit} className="flex gap-4">
                 <input
                   type="text"
                   value={input}
                   onChange={(e) => setInput(e.target.value)}
                   placeholder="Ask about your finances..."
-                  className="flex-1 p-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+                  className="flex-1 p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900"
                 />
                 <button
                   type="submit"
                   disabled={isLoading}
-                  className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white p-2 rounded-lg hover:from-blue-700 hover:to-indigo-700 transition-all duration-200 disabled:opacity-50"
+                  className="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 flex items-center gap-2"
                 >
                   <Send size={20} />
+                  Send
                 </button>
-              </div>
-            </form>
+              </form>
+            </div>
           </motion.div>
         )}
       </AnimatePresence>

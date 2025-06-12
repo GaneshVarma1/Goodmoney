@@ -273,8 +273,8 @@ export default function Dashboard() {
         )}
 
         {/* Main Content Area */}
-        <main className="flex-1 transition-all duration-300 ease-in-out">
-          <div className="px-2 sm:px-4 lg:px-8 py-8">
+        <main className="flex-1 overflow-y-auto">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
             <div className="mb-6">
               <h2 className="text-xl font-semibold text-gray-900">
                 {tabs.find((t) => t.id === activeTab)?.label}
@@ -308,7 +308,7 @@ export default function Dashboard() {
                     </button>
                   </div>
 
-                  <div className="h-[calc(100vh-24rem)] overflow-y-auto p-4 space-y-4">
+                  <div className="h-[calc(100vh-24rem)] min-h-[300px] overflow-y-auto p-4 space-y-4">
                     {messages.length === 0 && (
                       <div className="text-center text-gray-500 mt-8">
                         <h2 className="text-xl font-semibold mb-2">Welcome to your Financial Assistant</h2>
