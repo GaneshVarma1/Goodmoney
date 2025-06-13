@@ -61,7 +61,29 @@ async function makeApiRequest(prompt: string, context?: string): Promise<Togethe
           messages: [
             {
               role: 'system',
-              content: 'You are a helpful financial assistant. Provide clear, concise, and accurate financial advice. Focus on budgeting, saving, and making informed financial decisions.'
+              content: `You are a friendly and knowledgeable financial assistant named Good Money AI. Your goal is to help users with all aspects of personal finance in a conversational and engaging way.
+
+Key responsibilities:
+1. Answer general financial questions (budgeting, saving, investing, etc.)
+2. Provide personalized financial advice based on user's context
+3. Help users understand their spending patterns
+4. Suggest ways to save money and increase income
+5. Explain financial concepts in simple terms
+6. Offer practical tips for financial success
+
+Guidelines:
+- Be conversational and friendly, but professional
+- Use simple language and avoid complex financial jargon
+- Provide actionable advice and specific examples
+- Acknowledge user's financial goals and concerns
+- Be encouraging and supportive
+- If you don't know something, be honest about it
+- Always prioritize user's financial well-being
+
+About me:
+I was built by Sri, a Full Stack Developer. You can get in touch with him at bit.ly/sriport
+
+Remember: You're here to help users make better financial decisions and achieve their financial goals.`
             },
             ...(context ? [{ role: 'user', content: context }] : []),
             { role: 'user', content: prompt }
@@ -250,119 +272,61 @@ export async function POST(req: Request) {
         
         Please provide a concise summary of the key points discussed, focusing on:
         1. Main financial topics covered
-        2. Important advice or recommendations given
-        3. Any action items or next steps mentioned
+        2. Any specific advice or recommendations given
+        3. Action items or next steps suggested
+        4. Important insights or learnings
         
-        Format your response using markdown:
-        - Use # for main headings
-        - Use ## for subheadings
-        - Use bullet points (-) for lists
-        - Use paragraphs for detailed explanations
-        - Use **bold** for emphasis on important points
-        
-        Make sure to include line breaks between sections for better readability.
-      `;
+        Keep the summary clear and actionable.`;
     } else {
-      // Get recent chat history and transaction data
-      const [chatHistory, transactionData] = await Promise.all([
-        getChatHistory(userId),
-        getTransactionData(userId)
-      ]);
-
-      const recentMessages = chatHistory
-        .reverse()
-        .map(msg => `${msg.role}: ${msg.content}`)
-        .join('\n');
-
-      // Format transaction data for the prompt
-      const financialContext = `
-        Financial Overview:
+      // This is a regular conversation
+      const transactionData = await getTransactionData(userId);
+      
+      prompt = `
+        User's financial context:
         - Total Income: $${transactionData.totalIncome.toFixed(2)}
         - Total Expenses: $${transactionData.totalExpenses.toFixed(2)}
-        - Net Balance: $${(transactionData.totalIncome - transactionData.totalExpenses).toFixed(2)}
-        
-        Recent Transactions:
-        ${transactionData.recentTransactions.map(t => 
-          `- ${t.date}: ${t.type} of $${t.amount.toFixed(2)} in ${t.category}${t.description ? ` (${t.description})` : ''}`
-        ).join('\n')}
-        
-        Category Breakdown:
-        ${Object.entries(transactionData.categoryBreakdown)
-          .map(([category, amount]) => `- ${category}: $${amount.toFixed(2)}`)
-          .join('\n')}
-      `;
-
-      prompt = `
-        You are a financial assistant helping a user manage their finances.
-        
-        ${financialContext}
-        
-        Recent conversation history:
-        ${recentMessages}
+        - Net Savings: $${(transactionData.totalIncome - transactionData.totalExpenses).toFixed(2)}
+        - Top Expense Categories: ${Object.entries(transactionData.categoryBreakdown)
+          .sort(([,a], [,b]) => b - a)
+          .slice(0, 3)
+          .map(([cat, amount]) => `${cat}: $${amount.toFixed(2)}`)
+          .join(', ')}
         
         User's question: ${message}
         
-        Please provide a helpful, concise response focusing on financial advice and insights.
-        If the user's question is unrelated to personal finance, budgeting, saving, investing or similar topics, reply with: "I'm designed to assist with personal finance questions only."
-        Use the provided financial data to give personalized recommendations.
-        Consider the conversation history for context and continuity.
-        When discussing spending patterns or categories, reference the actual data provided.
-        If suggesting budget adjustments, base them on the user's current spending patterns.
-        
-        Format your response using markdown:
-        - Use # for main headings
-        - Use ## for subheadings
-        - Use bullet points (-) for lists
-        - Use paragraphs for detailed explanations
-        - Use **bold** for emphasis on important points
-        - Use line breaks between sections for better readability
-        
-        Structure your response with:
-        1. A clear heading summarizing the main point
-        2. Key insights or recommendations as bullet points
-        3. Detailed explanations in paragraphs
-        4. Action items or next steps if applicable
-      `;
+        Please provide a helpful and personalized response based on their financial situation.`;
     }
-
-    // Log intent without leaking keys or full prompt
-    console.log('Calling Together AI with prompt length:', prompt.length);
 
     const result = await makeApiRequest(prompt, context);
     
-    if (!result || !result.choices?.[0]?.message?.content) {
-      throw new Error('No response content received from Together AI');
-    }
-
-    const assistantResponse = result.choices[0].message.content;
-
     // Save assistant's response
-    await saveMessage(userId, 'assistant', assistantResponse);
+    await saveMessage(userId, 'assistant', result.choices[0].message.content);
 
     return NextResponse.json({
-      response: assistantResponse,
+      response: result.choices[0].message.content,
       usage: result.usage
     });
-  } catch (error: unknown) {
+  } catch (error) {
     const apiError = error as Error;
     console.error('Copilot route error:', apiError.message);
 
-    // Specific error handling
+    // Handle specific error cases
     if (apiError.message.includes('Invalid API key')) {
       return NextResponse.json(
         { error: 'Authentication error', message: 'Invalid API key.' },
         { status: 401 }
       );
     }
+
     if (apiError.message.includes('Rate limit')) {
       return NextResponse.json(
-        { error: 'Rate limit exceeded', message: 'Please try again later.' },
+        { error: 'Rate limit exceeded', message: 'Please try again in a few moments.' },
         { status: 429 }
       );
     }
 
     return NextResponse.json(
-      { error: 'Unexpected error', message: 'An unexpected error occurred.' },
+      { error: 'Internal server error', message: 'An unexpected error occurred.' },
       { status: 500 }
     );
   }
