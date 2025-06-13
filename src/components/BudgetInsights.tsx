@@ -2,9 +2,8 @@
 import { motion } from 'framer-motion'
 import { useDatabase } from '@/hooks/useDatabase'
 import { useAuth } from '@clerk/nextjs'
-import { useState, useEffect } from 'react'
-import { Transaction } from '@/lib/supabase'
-import toast from 'react-hot-toast'
+import { useState, useEffect, useCallback } from 'react'
+import { Transaction } from '@/types'
 
 interface Insight {
   id: string
@@ -20,24 +19,23 @@ export default function BudgetInsights() {
   const [transactions, setTransactions] = useState<Transaction[]>([])
   const [loading, setLoading] = useState(true)
 
-  useEffect(() => {
-    if (isLoaded && isSignedIn) {
-      fetchTransactions()
-    }
-  }, [isLoaded, isSignedIn])
-
-  const fetchTransactions = async () => {
+  const fetchTransactions = useCallback(async () => {
     try {
       setLoading(true)
       const data = await getTransactions()
       setTransactions(data)
-    } catch (error) {
-      console.error('Error fetching transactions:', error)
-      toast.error('Failed to load transactions')
+    } catch (err) {
+      console.error('Error fetching transactions:', err)
     } finally {
       setLoading(false)
     }
-  }
+  }, [getTransactions])
+
+  useEffect(() => {
+    if (isLoaded && isSignedIn) {
+      fetchTransactions()
+    }
+  }, [isLoaded, isSignedIn, fetchTransactions])
 
   // Calculate insights based on transaction data
   const calculateInsights = (): Insight[] => {

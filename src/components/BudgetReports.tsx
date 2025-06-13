@@ -6,11 +6,9 @@ import { useDatabase } from '@/hooks/useDatabase'
 import toast from 'react-hot-toast'
 import { generatePDF, generatePDFAsBase64 } from '@/utils/pdfExport'
 import { useAuth } from '@clerk/nextjs'
-import { Transaction } from '@/lib/supabase'
+import { Transaction } from '@/types'
 
-const COLORS = [
-  '#6366F1', '#F59E42', '#10B981', '#F43F5E', '#3B82F6', '#FBBF24', '#8B5CF6', '#EC4899', '#22D3EE', '#84CC16', '#E11D48', '#A3A3A3',
-]
+const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884D8', '#82CA9D']
 
 const dateRanges = [
   { label: 'This Month', value: 'month' },
@@ -29,32 +27,31 @@ export default function BudgetReports() {
   const [emailStatus, setEmailStatus] = useState<'idle' | 'sending' | 'success' | 'error'>('idle')
   const [isExporting, setIsExporting] = useState(false)
   const [isClient, setIsClient] = useState(false)
-  const contentRef = useRef<HTMLDivElement>(null)
+  const reportRef = useRef<HTMLDivElement>(null)
 
   // Set isClient to true when component mounts
   useEffect(() => {
     setIsClient(true)
   }, [])
 
-  // Fetch transactions
-  useEffect(() => {
-    if (isLoaded && isSignedIn) {
-      fetchTransactions()
-    }
-  }, [isLoaded, isSignedIn])
-
-  const fetchTransactions = async () => {
+  const fetchTransactions = useCallback(async () => {
     try {
       setLoading(true)
       const data = await getTransactions()
       setTransactions(data)
-    } catch (error) {
-      console.error('Error fetching transactions:', error)
+    } catch (err) {
+      console.error('Error fetching transactions:', err)
       toast.error('Failed to load transactions')
     } finally {
       setLoading(false)
     }
-  }
+  }, [getTransactions])
+
+  useEffect(() => {
+    if (isLoaded && isSignedIn) {
+      fetchTransactions()
+    }
+  }, [isLoaded, isSignedIn, fetchTransactions])
 
   // Date filtering logic
   const now = useMemo(() => new Date(), [])
@@ -106,11 +103,11 @@ export default function BudgetReports() {
 
   // Export as PDF with proper loading state
   const handleExportPDF = useCallback(async () => {
-    if (isExporting || !isClient || !contentRef.current) return
+    if (isExporting || !isClient || !reportRef.current) return
     
     try {
       setIsExporting(true)
-      await generatePDF(contentRef.current, 'budget-report.pdf')
+      await generatePDF(reportRef.current, 'budget-report.pdf')
       toast.success('PDF exported successfully!')
     } catch (error) {
       console.error('PDF export error:', error)
@@ -122,11 +119,11 @@ export default function BudgetReports() {
 
   // Export as CSV (now: Email statement)
   const handleEmailStatement = useCallback(async () => {
-    if (!email || emailStatus === 'sending' || !isClient || !contentRef.current) return
+    if (!email || emailStatus === 'sending' || !isClient || !reportRef.current) return
     
     try {
       setEmailStatus('sending')
-      const pdfBase64 = await generatePDFAsBase64(contentRef.current)
+      const pdfBase64 = await generatePDFAsBase64(reportRef.current)
       
       const res = await fetch('/api/send-statement', {
         method: 'POST',
@@ -195,7 +192,7 @@ export default function BudgetReports() {
 
       {/* Main content to be captured */}
       <div 
-        ref={contentRef}
+        ref={reportRef}
         className="flex flex-col gap-4 sm:gap-6 bg-white p-2 sm:p-4 md:p-6 w-full"
         style={{ 
           minHeight: '100vh',
