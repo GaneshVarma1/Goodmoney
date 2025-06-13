@@ -1,24 +1,43 @@
-# Good Money
+# Good Money - AI-Powered Financial Companion
 
-A modern, interactive dashboard for tracking personal finances with beautiful visualizations and insights.
+A modern, intelligent dashboard for tracking personal finances with AI-powered insights, beautiful visualizations, and smart recommendations.
 
 ## Features
 
-- 📊 Interactive charts and visualizations
-- 💰 Track income and expenses
-- 📈 Savings forecasting with "what-if" scenarios
-- 🌓 Dark/Light mode support
-- 📱 Responsive design
-- 💾 Local storage persistence
+- 🤖 AI-Powered Financial Copilot
+  - Natural language queries about your finances
+  - Personalized spending insights
+  - Smart budget recommendations
+  - Predictive financial analysis
+
+- 📊 Interactive Financial Dashboard
+  - Real-time expense tracking
+  - Income and expense categorization
+  - Interactive charts and visualizations
+  - Budget goal tracking
+  - Savings forecasting with "what-if" scenarios
+
+- 📱 Modern User Experience
+  - Responsive design for all devices
+  - Dark/Light mode support
+  - Beautiful UI with smooth animations
+  - PDF statement generation
+  - Real-time updates
 
 ## Tech Stack
 
-- Next.js 14 with App Router
-- TypeScript
-- Tailwind CSS
-- Recharts for data visualization
-- Zustand for state management
-- date-fns for date manipulation
+- **Frontend & Backend**
+  - Next.js 14 with App Router
+  - TypeScript
+  - Tailwind CSS
+  - Clerk for authentication
+  - Supabase for database
+
+- **AI & Data**
+  - Together AI (Llama-3.3-70B) for financial insights
+  - Recharts for data visualization
+  - Zustand for state management
+  - date-fns for date manipulation
 
 ## Getting Started
 
@@ -27,36 +46,52 @@ A modern, interactive dashboard for tracking personal finances with beautiful vi
    ```bash
    npm install
    ```
-3. Run the development server:
+3. Set up environment variables:
+   ```bash
+   NEXT_PUBLIC_SUPABASE_URL=your_supabase_url
+   NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
+   TOGETHER_API_KEY=your_together_ai_key
+   RESEND_API_KEY=your_resend_key
+   ```
+4. Run the development server:
    ```bash
    npm run dev
    ```
-4. Open [http://localhost:3000](http://localhost:3000) in your browser
+5. Open [http://localhost:3000](http://localhost:3000) in your browser
 
-## Usage
+## Key Features in Detail
 
-1. Add your income and expenses using the transaction form
-2. View your spending breakdown in the expense chart
-3. Track your income trends in the income chart
-4. Use the savings forecast to see how reducing expenses affects your savings
-5. Export your data as PDF when needed
+### AI Financial Copilot
+- Ask questions about your spending habits
+- Get personalized budget recommendations
+- Receive insights on saving opportunities
+- Analyze spending patterns
+- Get financial advice in natural language
+
+### Smart Budget Tracking
+- Automatic transaction categorization
+- Real-time budget monitoring
+- Custom budget categories
+- Spending alerts and notifications
+- Monthly budget reports
+
+### Savings & Goals
+- Set and track savings goals
+- Visualize progress towards goals
+- Get AI-powered savings recommendations
+- Forecast future savings
+- Track multiple financial goals
 
 ## Contributing
 
-Feel free to submit issues and enhancement requests!
+We welcome contributions! Please feel free to submit issues and enhancement requests.
 
 ## Learn More
 
-To learn more about Next.js, take a look at the following resources:
+To learn more about the technologies used:
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+- [Next.js Documentation](https://nextjs.org/docs)
+- [Together AI Documentation](https://docs.together.ai)
+- [Supabase Documentation](https://supabase.com/docs)
+- [Clerk Documentation](https://clerk.com/docs)
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
-# Goodmoney
