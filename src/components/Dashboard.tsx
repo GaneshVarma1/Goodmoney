@@ -13,6 +13,7 @@ import { BudgetDataProvider } from './BudgetDataContext'
 import SavingsGoals from './SavingsGoals'
 import { useAuth } from '@clerk/nextjs'
 import { FileText, Send } from 'lucide-react'
+import { useRouter } from 'next/navigation'
 
 type Tab = 'overview' | 'transactions' | 'goals' | 'insights' | 'reports' | 'ai-chat'
 
@@ -71,6 +72,8 @@ export default function Dashboard() {
   const [isLoading, setIsLoading] = useState(false);
   const [isSummarizing, setIsSummarizing] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const { isLoaded, isSignedIn } = useAuth();
+  const router = useRouter();
 
   const tabs: { id: Tab; label: string; icon: React.ReactNode }[] = [
     { id: 'overview', label: 'Overview', icon: <MdHome className="w-5 h-5" /> },
@@ -191,6 +194,23 @@ export default function Dashboard() {
       setIsSummarizing(false);
     }
   };
+
+  useEffect(() => {
+    if (isLoaded && !isSignedIn) {
+      router.push('/sign-in');
+    }
+  }, [isLoaded, isSignedIn, router]);
+
+  if (!isLoaded || !isSignedIn) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+          <p className="mt-4 text-gray-600">Loading...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <BudgetDataProvider>
