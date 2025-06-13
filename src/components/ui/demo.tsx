@@ -12,7 +12,7 @@ const DemoOne = () => {
         <Scene />
       </div>
       <h1 className="text-6xl md:text-8xl font-bold mb-6 tracking-tight mix-blend-difference text-white">
-        Good Money
+        Good Money AI
       </h1>
       <p className="text-lg md:text-xl text-white mix-blend-exclusion max-w-2xl px-6 leading-relaxed">
         Why pay to save money? Good Money helps you track, manage, and grow your finances - completely free!
